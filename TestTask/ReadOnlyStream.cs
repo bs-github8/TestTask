@@ -1,11 +1,14 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 
 namespace TestTask
 {
     public class ReadOnlyStream : IReadOnlyStream
     {
-        private Stream _localStream;
+        private StreamReader _localStream;
+        private char _bufferedChar;
+        private string _filePath;
 
         /// <summary>
         /// Конструктор класса. 
@@ -15,10 +18,8 @@ namespace TestTask
         /// <param name="fileFullPath">Полный путь до файла для чтения</param>
         public ReadOnlyStream(string fileFullPath)
         {
-            IsEof = true;
-
             // TODO : Заменить на создание реального стрима для чтения файла!
-            _localStream = null;
+            _filePath = fileFullPath;
         }
                 
         /// <summary>
@@ -26,8 +27,9 @@ namespace TestTask
         /// </summary>
         public bool IsEof
         {
-            get; // TODO : Заполнять данный флаг при достижении конца файла/стрима при чтении
-            private set;
+            // TODO : Заполнять данный флаг при достижении конца файла/стрима при чтении
+            get => _localStream.EndOfStream;
+            //private set;
         }
 
         /// <summary>
@@ -36,10 +38,26 @@ namespace TestTask
         /// должен бросать соответствующее исключение
         /// </summary>
         /// <returns>Считанный символ.</returns>
+        /// <exception cref="EndOfStreamException">Попытка считать после последнего символа</exception>
         public char ReadNextChar()
         {
             // TODO : Необходимо считать очередной символ из _localStream
-            throw new NotImplementedException();
+            var b = _localStream.Read();
+
+            if (b == -1)
+            {
+                throw new EndOfStreamException();
+            }
+
+            return (char)b;
+        }
+
+        /// <summary>
+        /// Закрыть поток.
+        /// </summary>
+        public void Close()
+        {
+            _localStream.Close();
         }
 
         /// <summary>
@@ -47,14 +65,12 @@ namespace TestTask
         /// </summary>
         public void ResetPositionToStart()
         {
-            if (_localStream == null)
-            {
-                IsEof = true;
-                return;
-            }
+            _localStream = new StreamReader(_filePath, new UTF8Encoding(false));
+        }
 
-            _localStream.Position = 0;
-            IsEof = false;
+        public void Dispose()
+        {
+            _localStream.Dispose();
         }
     }
 }
